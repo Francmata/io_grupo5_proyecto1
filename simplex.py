@@ -1,3 +1,4 @@
+from array import array
 import sys
 from turtle import clear
 #Global variables
@@ -7,6 +8,7 @@ descitionVar = 0
 restrictionNum= 0
 totalVars=0
 BasicVariables=[]
+ArtifitialVar=[]
 bounded=True
 degenerate=False
 #funtion 1:main
@@ -98,8 +100,11 @@ def menu(problemMatrix,objetiveFuction):
         aumentedMat=aumentedMatrixSimplex(problemMatrix,objetiveFuction)
         BasicVariables=initialBV(totalVars)
         simplex(aumentedMat)
-    else:
+    elif method==1:
         print("NO ES SIMPLEX")
+    else:
+        TwoPhases(problemMatrix,objetiveFuction)
+       # aumentedMatrixTwoPhases(problemMatrix,objetiveFuction)
 
 # funtion 5: simplex
 #calls and starts the functions needed to do the
@@ -109,7 +114,9 @@ def simplex(aumentedMat):
     row_column=[]
     flag=True
     currentMat=aumentedMat
-    #row_column=getPivot(currentMat)
+    row_column=getPivot(currentMat)
+    #print(row_column)
+
     printCosole(currentMat,0,"w","Initial Matrix")
     iterationNum=1
     while flag:
@@ -127,9 +134,12 @@ def simplex(aumentedMat):
         else:
             if its0ptimum(currentMat):
                 flag=False
-                
-                printCosole(currentMat,iterationNum-1,"a","Optimun Matrix")
-                #verificar si tiene multiple solucion
+                if method==2:
+                    printCosole(currentMat,iterationNum-1,"a","Optimun Matrix")
+                    return currentMat
+                else:
+                    printCosole(currentMat,iterationNum-1,"a","Optimun Matrix")
+                    #verificar si tiene multiple solucion
                 
             else:
                 row_column=getPivot(currentMat)
@@ -221,7 +231,7 @@ def aumentedMatrixSimplex(restriction,objective):
         if count2 <(len(objective)):
             array.append(-(objective[count2]))
         else:
-            array.append(0)
+            array.append(float(0))
         count2+=1
     aumentedMat.append(array)
     
@@ -234,10 +244,10 @@ def aumentedMatrixSimplex(restriction,objective):
                 array1.append(i[j])
                 j+=1
             elif j== descitionVar+count:
-                array1.append(1) 
+                array1.append(float(1)) 
                 j+=1
             else:
-                array1.append(0)
+                array1.append(float(0))
                 j+=1
         array1.append(i[-1])
         aumentedMat.append(array1)
@@ -275,9 +285,11 @@ def getPivot(matrix):
     currentRow=0
     for i  in matrix:
         if currentRow==0:
-            for i in matrix[0]:
+            objective=matrix[0]
+            for i in objective[0:-2]:
                 if i< matrix[0][column]:
                     column=count
+                    print(column,"colum pivote")
                 count+=1
             count=0
         else:
@@ -403,10 +415,119 @@ def verifyRightSide(matrix):
             newMatrix.append(array)
         else:
             newMatrix.append(i)
-    print(newMatrix)
+   
     return (newMatrix)
+####################################################################3
+# funtion 18: TwoPhases
+#calls and starts the functions needed to do the
+#  TwoPhase method 
+def TwoPhases(problemMatrix,objetiveFuction):
+    global BasicVariables
+    aumentedMat=[]
+    aumentedMat=aumentedMatrixTwoPhases(problemMatrix)
+    properAumentedMat=properWay(aumentedMat)
+    #primera fase
+    print(objetiveFuction)
+    print("Primera Fase")
+    FirstPhaseMat=simplex(properAumentedMat)
 
+
+## funtion 19: properWay
+#changes the values ​​of the objective function 
+# to the appropriate form (without the artificial variables)
+def properWay(aumentedMat):
+    global  descitionVar,totalVars,ArtifitialVar
+    ProperMat=[]
+    ProperObjective=[]
+    count=0
+    current=0
+    for i in aumentedMat:
+        if count==0:
+            ProperMat.append(i)
+        else:
+            if i[ArtifitialVar[current]-1] ==float(1):
+                print(i[ArtifitialVar[current]-1])
+                ProperMat.append(i)
+                current+=1
+        count+=1
+
+    j=0
+    while j < len(ProperMat[0]):
+        i=1
+        res=ProperMat[0][j]
+        while i< len(ProperMat):
+            res= res-(ProperMat[i][j])
+            i+=1
+        ProperObjective.append(float(res))
+        j+=1
+
+    ProperMat=[]
+    count=0
+    current=0
+    for i in aumentedMat:
+        if count==0:
+            ProperMat.append(ProperObjective)
+        else:
+            ProperMat.append(i)      
+        count+=1
+    return(ProperMat)
+#function 20:aumentedMatrixTwoPhases
+#return the aumented matrix in the two Phase method 
+def aumentedMatrixTwoPhases(restriction):
+    global  descitionVar,totalVars,ArtifitialVar
+    aumentedMat=[] 
+    count=0
+    AuMat=[]
+    for i in restriction:
+        j=0
+        array1=[]
+        while j <totalVars:
+            if j <descitionVar:
+                array1.append(i[j])
+                j+=1
+            elif j== descitionVar+count:
+                if i[descitionVar]=="<=":
+                    array1.append(float(1)) 
+                    j+=1
+                    BasicVariables.append((descitionVar)+count+1)  
+                elif i[descitionVar]=="=":
+                    array1.append(float(1)) 
+                    j+=1
+                    BasicVariables.append((descitionVar)+count+1)
+                    ArtifitialVar.append((descitionVar)+count+1)
+                else:
+                    array1.append(float(-1))
+                    array1.append(float(1))
+                    j+=2
+                    count+=1
+                    ArtifitialVar.append((descitionVar-1)+count+2)
+                    BasicVariables.append((descitionVar-1)+count+2)
+            else:
+                array1.append(float(0))
+                j+=1
+        array1.append(i[-1])
+        aumentedMat.append(array1)
+        count+=1
+    count2=0
+    i=0
+    array=[]  
+    while i < totalVars:  
+        if count2<(len(ArtifitialVar)):
+            current=ArtifitialVar[count2]
+            if i== (current-1):
+                array.append(float(1))
+                count2+=1
+            else:
+                array.append(float(0))
+            i+=1
+        else:
+            array.append(float(0))
+            i+=1
+    array.append(float(0))
+    AuMat.append(array)
+    for i in aumentedMat:
+        AuMat.append(i)
+    return(AuMat)
 
 main()
-
 
