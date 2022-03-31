@@ -1009,7 +1009,7 @@ def iterationBigM(matrix):
     pivot=matrix[NumRowPivot][NumColPivot]
 
     print("")
-    msg="\nEste es el numero de columna pivote"+str(NumColPivot)+"\nEste es el numero de fila pivote"+str(NumRowPivot)+"\nEste es el numero pivote"+str(pivot)+"\nESTA ES LA MATRIZ CON LAS OPERACIONES EFECTUADAS"
+    msg="\nEste es el numero de columna pivote"+str(NumColPivot)+"\nEste es el numero de fila pivote"+str(NumRowPivot)+"\nEste es el numero pivote"+str(pivot)+"\n La variable saliente es "+str(matrix[NumRowPivot][0])+"\nESTA ES LA MATRIZ CON LAS OPERACIONES EFECTUADAS"
     
 
     VariableB = matrix[0][NumColPivot]
