@@ -2,6 +2,6 @@
 Repositorio del proyecto de IO del grupo 5
 
 Integrantes:
-Adriana López Calderón
-Adyer Alpízar Solís
+Adriana López Calderón -
+Adyer Alpízar Solís -
 Francisco Mata Blanco
