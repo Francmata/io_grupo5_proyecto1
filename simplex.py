@@ -82,7 +82,7 @@ def abstractData(file):
 #funtion 4: menu
 #determines to which method to send the matrix to solve
 def menu(problemMatrix,objetiveFuction):
-    global  method,optimization,descitionVar,restrictionNum,totalVars,BasicVariables
+    global  method,optimization,descitionVar,restrictionNum,totalVars,BasicVariables,PhaseTwo
     if optimization =="min":
         objetiveFuction= changeSymbols(objetiveFuction)
     
@@ -99,23 +99,23 @@ def menu(problemMatrix,objetiveFuction):
         aumentedMat=[]
         aumentedMat=aumentedMatrixSimplex(problemMatrix,objetiveFuction)
         BasicVariables=initialBV(totalVars)
+        PhaseTwo=False
         simplex(aumentedMat)
     elif method==1:
         print("NO ES SIMPLEX")
     else:
         TwoPhases(problemMatrix,objetiveFuction)
-       # aumentedMatrixTwoPhases(problemMatrix,objetiveFuction)
-
+       
 # funtion 5: simplex
 #calls and starts the functions needed to do the
 #  simplex method  
 def simplex(aumentedMat):
-    global  method,optimization,descitionVar,restrictionNum,totalVars,BasicVariables,bounded
+    global  method,optimization,descitionVar,restrictionNum,totalVars,BasicVariables,bounded,PhaseTwo
     row_column=[]
     flag=True
     currentMat=aumentedMat
     row_column=getPivot(currentMat)
-    #print(row_column)
+    
 
     printCosole(currentMat,0,"w","Initial Matrix")
     iterationNum=1
@@ -124,13 +124,6 @@ def simplex(aumentedMat):
             flag=False
             print(currentMat,"Not bounded Matrix","\n")
             printCosole(currentMat,iterationNum-1,"a","Not bounded Matrix")
-            
-        #elif degenerate == True:
-        #    print(currentMat,"Not bounded Matrix","\n")
-        #    print("solucion degenerada")
-        #    row_column=getPivot(currentMat)
-        #    currentMat=iteration(currentMat,row_column)
-        #    print(currentMat,"currentMat","\n")
         else:
             if its0ptimum(currentMat):
                 flag=False
@@ -144,9 +137,7 @@ def simplex(aumentedMat):
             else:
                 row_column=getPivot(currentMat)
                 currentMat=iteration(currentMat,row_column)
-               
                 printCosole(currentMat,iterationNum,"a","Current Matrix")
-                #row_column=getPivot(currentMat)
                 iterationNum+=1
 
 #funtion 6: checkMethod
@@ -289,19 +280,14 @@ def getPivot(matrix):
             for i in objective[0:-2]:
                 if i< matrix[0][column]:
                     column=count
-                    print(column,"colum pivote")
                 count+=1
             count=0
         else:
-           
             if i[column]== float(0):
                 count1+=1
                 if row ==1:
                     row=count1
             else:
-                #if ((i[-1]/i[column]) == ((matrix[row][-1])/(matrix[row][column]))):
-                #    degenerate=True
-
                 if ((i[-1]/i[column]) < ((matrix[row][-1])/(matrix[row][column])) and (i[-1]/i[column])>=float(0)):
                     row=count1
                 count1+=1
@@ -322,7 +308,7 @@ def iteration(matrix,pivot):
     numPivot=matrix[pivot[0]][pivot[1]]
     count=0
     for i in matrix[pivot[0]]:
-        newRow.append(round(float(i/numPivot),5))
+        newRow.append(round(float(i/numPivot),3))
     for i in matrix:
         array=[]
         if count== pivot[0]:
@@ -331,7 +317,7 @@ def iteration(matrix,pivot):
             currentCol=0
             for j in i:
                 val=j-(matrix[count][pivot[1]])*(newRow[currentCol])
-                array.append(round(float(val),5))
+                array.append(round(float(val),3))
                 currentCol+=1
             IterationMatrix.append(array)
         count+=1
@@ -341,7 +327,11 @@ def iteration(matrix,pivot):
 #prints in console and in a txt the solution 
 # of the linear problem with the simplex method
 def printCosole(matrix,iterationNum,action,message):
-    global  method,optimization,descitionVar,restrictionNum,totalVars,BasicVariables,bounded,filename
+    global  method,optimization,descitionVar,restrictionNum,totalVars,BasicVariables,bounded,filename,PhaseTwo
+    if PhaseTwo==True:
+        action="a"
+    else:
+        action=action
     columnNames=[]
     columnNames.append("VB")
     i=0
@@ -375,8 +365,6 @@ def printCosole(matrix,iterationNum,action,message):
         for j in i:
             stringChain+=str(j)+"\t\t   "
         stringChain+="\n"
-    #stringChain+="\n Input variable: "+"X"+str(pivot[1]+1)
-    #stringChain+="\n Outgoing variable: "+"X"+str(BasicVariables[pivot[0]-1])
     stringChain+="\n\n"
     print(stringChain)
     name=str(filename[0:-4])+"_solution.txt" 
@@ -417,22 +405,122 @@ def verifyRightSide(matrix):
             newMatrix.append(i)
    
     return (newMatrix)
-####################################################################3
+###################################################################
 # funtion 18: TwoPhases
 #calls and starts the functions needed to do the
 #  TwoPhase method 
 def TwoPhases(problemMatrix,objetiveFuction):
-    global BasicVariables
+    global BasicVariables,PhaseTwo,filename
+    PhaseTwo=False
     aumentedMat=[]
     aumentedMat=aumentedMatrixTwoPhases(problemMatrix)
     properAumentedMat=properWay(aumentedMat)
     #primera fase
-    print(objetiveFuction)
-    print("Primera Fase")
+    print("First Phase")
+    aumentedObjectiveFuntion=[]
+    i=0
+    while i<=totalVars:
+        if i <(len(objetiveFuction)):
+            aumentedObjectiveFuntion.append(-(objetiveFuction[i]))
+        else:
+            aumentedObjectiveFuntion.append(float(0))
+        i+=1
+    
     FirstPhaseMat=simplex(properAumentedMat)
+    aumentedMatrix=prepareSeconPhase(FirstPhaseMat,aumentedObjectiveFuntion)
+    stringChain=""
+    stringChain+=  "Preparing second phase\n"
+    stringChain+= "substitute objective function\n"
+    stringChain+="\n\n"
+    stringChain+= "Second Phase\n"
+    name=str(filename[0:-4])+"_solution.txt" 
+    file= open(name,"a")
+    file.write(stringChain)
+    file.close()
+    print("Second Phase")
+    PhaseTwo=True
+    aumentedMatrix=simplex(aumentedMatrix)
+# funtion 20: prepareSeconPhase
+#preparation for phase two where the objective function is introduced, 
+# the artificial variables are removed and the values ​​
+# "that the method does not like" are subtracted
+def prepareSeconPhase(FirstPhaseMat,objetiveFuction):
+    global method,optimization,descitionVar,restrictionNum,totalVars,BasicVariables,bounded,filename,ArtifitialVar
+    newAumentedMat=[]
+    count=0
+    for i in FirstPhaseMat:
+        if count==0:
+            newAumentedMat.append(objetiveFuction)
+        else:
+            newAumentedMat.append(i)
+        count+=1
+    newAumentedMat=fixBasicVarObjective(newAumentedMat)
+    aumentedMatrix=withdrawArtifitial(newAumentedMat)
+    return(aumentedMatrix)
 
+# funtion 21: fixBasicVarObjective
+#remove the values ​​of the basic variables that 
+# the method doesn't like on line 0
+def fixBasicVarObjective(newAumentedMat):
+    global method,optimization,descitionVar,restrictionNum,totalVars,BasicVariables,bounded,filename,ArtifitialVar
+    count=0
+    answerMatrix=[]
+    objectivelist=newAumentedMat[0]
+    i=0
+    while i < len(BasicVariables):
+        col=BasicVariables[i]-1
+        row=0
+        count=0
+        for j in newAumentedMat:
+            if count==0:
+                count+=1
+            else:
+                if j[col] ==float(1):
+                    row=count   
+                count+=1
+        array=[]
+        currentCol=0
+        for value in objectivelist:
+            val=value-(objectivelist[col])*(newAumentedMat[row][currentCol])
+            array.append(round(float(val),3))
+            currentCol+=1
+        objectivelist=array
+        i+=1
+    current=0
+    for list in newAumentedMat:
+            if current==0:
+                answerMatrix.append(objectivelist)
+            else:
+                answerMatrix.append(list)  
+            current+=1
+    return(answerMatrix)
 
-## funtion 19: properWay
+# funtion 22: withdrawArtifitial
+#delete the columns(coefficients)
+# of the artifitial variables
+def withdrawArtifitial(newAumentedMat):
+    global method,optimization,descitionVar,restrictionNum,totalVars,BasicVariables,bounded,filename,ArtifitialVar
+    resMatrix=[]
+    matrix=newAumentedMat
+    count=0
+    while count < len(ArtifitialVar):
+        for i in matrix:
+            array=[]
+            currentJ=0
+            for j in i:
+                if currentJ==ArtifitialVar[count]-1:
+                    array.append(float(0)) 
+                else:
+                    array.append(j)
+                currentJ+=1
+            resMatrix.append(array)
+        matrix=resMatrix
+        resMatrix=[]
+        count+=1
+    
+    return(matrix)       
+
+# funtion 23: properWay
 #changes the values ​​of the objective function 
 # to the appropriate form (without the artificial variables)
 def properWay(aumentedMat):
@@ -446,11 +534,9 @@ def properWay(aumentedMat):
             ProperMat.append(i)
         else:
             if i[ArtifitialVar[current]-1] ==float(1):
-                print(i[ArtifitialVar[current]-1])
                 ProperMat.append(i)
                 current+=1
         count+=1
-
     j=0
     while j < len(ProperMat[0]):
         i=1
@@ -471,7 +557,7 @@ def properWay(aumentedMat):
             ProperMat.append(i)      
         count+=1
     return(ProperMat)
-#function 20:aumentedMatrixTwoPhases
+#function24:aumentedMatrixTwoPhases
 #return the aumented matrix in the two Phase method 
 def aumentedMatrixTwoPhases(restriction):
     global  descitionVar,totalVars,ArtifitialVar
@@ -530,4 +616,3 @@ def aumentedMatrixTwoPhases(restriction):
     return(AuMat)
 
 main()
-
